@@ -70,6 +70,7 @@ require(BayesianFirstAid)
 # bayes.prop.test(c(25130,19620),c(9667226,5256018))
 bayes.prop.test(c(2463,1927),c(967083,525199))
 bayes.prop.test(c(5039,3829),c(1934365,1051673))
+bayes.prop.test(c(7506,5905),c(2895984,1576496))
 # SIGNIFICANT DIFFERENCES BETWEEN INTERACTION GROUPS FOUND IN ABOVE TEST: INTERACTION-->HIGHER CONVERSIONS
 #--Get interaction data for model
 modeldata<-subset(richmedia,interaction==1)
@@ -124,6 +125,7 @@ fit <- glmnet(model.matrix(~.-1,x), y, family="cox",alpha=0.5)
 plot(fit, label=T)
 cv.fit <- cv.glmnet(model.matrix(~.-1,x),y, family="cox", alpha=0.5)
 plot(cv.fit)
+coef(cv.fit,s='lambda.1se')
 
 
 library(pROC)
@@ -214,8 +216,6 @@ solution<-logistf(data=modeldata,signup ~event_cntoverlag + os_cnt + prefetchtag
 
 install.packages('logistf')
 install.packages('bartMachine')
-options(java.parameters = "-Xmx12000m")
-require(bartMachine)
 require(logistf)
 solution_boosted<-logistf(data=boosted,signup ~event_cntoverlag + prefetch_overlag + dynamic_ad_overlag + html5_overlag + interactivity_overlag + motif_expansions_overlag + 
  motif_manual_closes_overlag + video_view_overlag + video_play_overlag + video_stop_overlag + video_mutes_overlag + 
@@ -224,7 +224,16 @@ solution_boosted<-logistf(data=boosted,signup ~event_cntoverlag + prefetch_overl
  video_complete_overlag + average_display_time + average_interactivity_time + average_motif_expansions_time +  average_video_view_time + os_desc)
 backward(solution_boosted)
 
-
+options(java.parameters = "-Xmx12000m")
+require(bartMachine)
+boosted$signup<-factor(boosted$signup)
+bmachine1<-build_bart_machine(boosted[,c(3,4,16,37:72)],boosted$signup)
+summary(bmachine1)
+var_selection_by_permute(bmachine1)
+investigate_var_importance(bmachine1)
+bmachinecv<-bartMachineCV(boosted[,c(3,4,16,37:72)],boosted$signup)
+var_selection_by_permute_cv(bmachinecv,margin=20)
+investigate_var_importance_cv(bmachinecv,margin=20)
 # Backward selection from logistf using regular sample/boosted sample 
 
 logistf(formula = subscribe ~ event_cntoverlag + prefetchtag + 
