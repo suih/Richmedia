@@ -224,7 +224,8 @@ solution_boosted<-logistf(data=boosted,signup ~event_cntoverlag + prefetch_overl
  video_complete_overlag + average_display_time + average_interactivity_time + average_motif_expansions_time +  average_video_view_time + os_desc)
 backward(solution_boosted)
 
-options(java.parameters = "-Xmx12000m")
+load('~/shuang_source/Richmedia/boosted.Rda')
+options(java.parameters = "-Xmx64000m")
 require(bartMachine)
 boosted$signup<-factor(boosted$signup)
 bmachine1<-build_bart_machine(boosted[,c(3,4,16,37:72)],boosted$signup)
