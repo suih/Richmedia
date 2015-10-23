@@ -128,6 +128,21 @@ plot(cv.fit)
 coef(cv.fit,s='lambda.1se')
 
 
+#BART#
+load('~/shuang_source/Richmedia/boosted.Rda')
+options(java.parameters = "-Xmx64000m")
+colnames(boosted)
+boosted$event_cnt<-NULL
+boosted$os_desc<-NULL
+colnames(boosted)
+bmachinecv<-bartMachineCV(boosted[,c(3,4,16,37:62)],boosted$signup)
+var_selection_by_permute_cv(bmachinecv)
+investigate_var_importance_cv(bmachinecv)
+require(bartMachine)
+bmachinecv<-bartMachineCV(boosted[,c(3,4,16,37:71)],boosted$signup)
+var_selection_by_permute_cv(bmachinecv,margin=20)
+investigate_var_importance(bmachinecv)
+
 library(pROC)
 comb<-data.frame(solution2$y,solution2$pred)
 g <- roc(solution2.y ~ solution2.pred,data=comb)
@@ -224,18 +239,7 @@ solution_boosted<-logistf(data=boosted,signup ~event_cntoverlag + prefetch_overl
  video_complete_overlag + average_display_time + average_interactivity_time + average_motif_expansions_time +  average_video_view_time + os_desc)
 backward(solution_boosted)
 
-load('~/shuang_source/Richmedia/boosted.Rda')
-options(java.parameters = "-Xmx64000m")
-require(bartMachine)
-boosted$signup<-factor(boosted$signup)
-bmachine1<-build_bart_machine(boosted[,c(3,4,16,37:72)],boosted$signup)
-summary(bmachine1)
-var_selection_by_permute(bmachine1)
-investigate_var_importance(bmachine1)
-bmachinecv<-bartMachineCV(boosted[,c(3,4,16,37:72)],boosted$signup)
-var_selection_by_permute_cv(bmachinecv,margin=20)
-investigate_var_importance_cv(bmachinecv,margin=20)
-# Backward selection from logistf using regular sample/boosted sample 
+
 
 logistf(formula = subscribe ~ event_cntoverlag + prefetchtag + 
  dynamictag + motif_expansions_overlag + motif_manual_closes_overlag + 
@@ -383,7 +387,6 @@ plot(cv.fit)
 
 #SURVIVAL ANALYSIS USING EVENT LEVEL DATA
 
-#BART#
 
 
 # Get Stratified Sample
