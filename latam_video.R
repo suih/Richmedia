@@ -88,3 +88,5 @@ plot(fit, label=T)
 cv.fit <- cv.glmnet(model.matrix(~.-1,x),y, family="cox", alpha=0.5)
 plot(cv.fit)
 coef(cv.fit,s='lambda.1se')
+
+
