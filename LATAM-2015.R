@@ -82,7 +82,8 @@ nrow(modeldata)
 colnames(modeldata)
 modeldata$interaction<-NULL
 # Get device information
-osid=RPrint_CSV("shuang","select distinct os_id,os_desc from dse.ad_dfa_os_d")
+# osid=RPrint_CSV("shuang","select distinct os_id,os_desc from dse.ad_dfa_os_d")
+osid=dbGetQuery(con,"select distinct os_id,os_desc from dse.ad_dfa_os_d")
 modeldata<-merge(x=modeldata,y=osid,by='os_id',all.x=TRUE)
 modeldata$event_cntoverlag<-modeldata$event_cnt/modeldata$adjusted_lag
 modeldata$os_desc<-ifelse(modeldata$os_desc=='NA',paste('unknown',modeldata$os_id,sep='_'),modeldata$os_desc)
@@ -106,7 +107,7 @@ nullsamp<-subset(modeldata,signup==0)[sample(1:nrow(subset(modeldata,signup==0))
 boosted<-rbind(sub,nullsamp)
 table(boosted$signup)
 
-
+save(boosted,file='~/shuang_source/Richmedia/latam_rmboosted.Rda')
 require(glmnet)
 boosted$event_cnt<-NULL
 colnames(boosted)
@@ -130,18 +131,23 @@ coef(cv.fit,s='lambda.1se')
 
 #BART#
 load('~/shuang_source/Richmedia/boosted.Rda')
-options(java.parameters = "-Xmx64000m")
+options(java.parameters = "-Xmx50000m")
+require(bartMachine)
 colnames(boosted)
 boosted$event_cnt<-NULL
 boosted$os_desc<-NULL
 colnames(boosted)
-bmachinecv<-bartMachineCV(boosted[,c(3,4,16,37:62)],boosted$signup)
+boosted$signup<-factor(boosted$signup)
+bmachine1<-build_bart_machine(boosted[,c(3,4,16,37:61)],boosted$signup)
+summary(bmachine1)
+var_selection_by_permute(bmachine1)
+investigate_var_importance(bmachine1)
+bmachinecv<-bartMachineCV(boosted[,c(3,4,16,37:61)],boosted$signup)
 var_selection_by_permute_cv(bmachinecv)
 investigate_var_importance_cv(bmachinecv)
-require(bartMachine)
-bmachinecv<-bartMachineCV(boosted[,c(3,4,16,37:71)],boosted$signup)
-var_selection_by_permute_cv(bmachinecv,margin=20)
-investigate_var_importance(bmachinecv)
+
+
+colnames(boosted)
 
 library(pROC)
 comb<-data.frame(solution2$y,solution2$pred)
